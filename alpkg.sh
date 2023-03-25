@@ -12,7 +12,7 @@ export ALPINE_PACKAGES=${ALPINE_PACKAGES:="build-base sudo doas bash bash-doc ba
 export CHROOT_KEEP_VARS=${CHROOT_KEEP_VARS:="ARCH TERM SHELL"}
 
 PACKAGER="Orhun Parmaksız <orhunparmaksiz@gmail.com>"
-APORTS_URL="https://gitlab.alpinelinux.org/orhun/aports"
+APORTS_URL="https://gitlab.alpinelinux.org/alpine/aports"
 APORTS_DIR=${APORTS_DIR:="$HOME/aports"}
 
 create-pkg-script() {
@@ -124,6 +124,21 @@ init-aports() {
 	chmod +x "$APORTS_DIR/.git/hooks/prepare-commit-msg"
 }
 
+fetch-pkg() {
+	cd "$APORTS_DIR"
+	git stash
+	git checkout master
+	git pull
+	pkg=$(find "$(pwd)" -wholename "*/$1/APKBUILD")
+	if [ -z "${pkg}" ]; then
+		echo "Package is not found!"
+		exit 1
+	fi
+	mkdir "$CHROOT_DIR/$HOME/$1"
+	cp "$pkg" "$CHROOT_DIR/$HOME/$1"
+	run ./pkg.sh "$1"
+}
+
 run() {
 	if [ ! -d "$CHROOT_DIR" ]; then
 		echo "$CHROOT_DIR is not found. Did you create the chroot?"
@@ -138,3 +153,4 @@ run() {
 # init-aports
 # run ./pkg.sh "$1"
 # run ./pkg.sh -l "$1"
+# fetch-pkg "$1"
