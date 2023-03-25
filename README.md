@@ -25,7 +25,7 @@ Options:
 
 ## License
 
-This project is licensed under [The MIT License](./LICENSE-MIT).
+This project is licensed under [The MIT License](./LICENSE).
 
 ## Copyright
 
