@@ -31,7 +31,7 @@ jobs:
 
       - name: Test
         run: |
-          sudo ./alpkg init --packager "Your Name <your@email.address>" --aports "https://gitlab.alpinelinux.org/alpine/aports"
+          ./alpkg init --packager "Your Name <your@email.address>" --aports "https://gitlab.alpinelinux.org/alpine/aports"
 
   lint:
     name: Lint
