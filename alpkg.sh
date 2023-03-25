@@ -129,14 +129,35 @@ fetch-pkg() {
 	git stash
 	git checkout master
 	git pull
-	pkg=$(find "$(pwd)" -wholename "*/$1/APKBUILD")
-	if [ -z "${pkg}" ]; then
+	apkbuild=$(find "$(pwd)" -wholename "*/$1/APKBUILD")
+	if [ -z "${apkbuild}" ]; then
 		echo "Package is not found!"
 		exit 1
 	fi
 	mkdir "$CHROOT_DIR/$HOME/$1"
-	cp "$pkg" "$CHROOT_DIR/$HOME/$1"
+	cp "$apkbuild" "$CHROOT_DIR/$HOME/$1"
 	run ./pkg.sh "$1"
+}
+
+update-pkg() {
+	run ./pkg.sh -l "$1"
+	cd "$APORTS_DIR"
+	git stash
+	git checkout master
+	git pull
+	apkbuild=$(find "$(pwd)" -wholename "*/$1/APKBUILD")
+	if [ -z "${apkbuild}" ]; then
+		mkdir "$APORTS_DIR/testing/$1"
+		apkbuild="$APORTS_DIR/testing/$1/APKBUILD"
+		echo "Adding a new package to aports."
+	else
+		echo "Package is found in aports."
+	fi
+	git branch -D "aport/$1" || true
+	git checkout -b "aport/$1"
+	cp "$CHROOT_DIR/$HOME/$1/APKBUILD" "$apkbuild"
+	git add "$apkbuild"
+	git commit
 }
 
 run() {
@@ -148,9 +169,9 @@ run() {
 	"$CHROOT_DIR/enter-chroot" -u "$USER" "${@}"
 }
 
-# create-pkg-script
 # init-chroot
 # init-aports
 # run ./pkg.sh "$1"
 # run ./pkg.sh -l "$1"
 # fetch-pkg "$1"
+# update-pkg "$1"
