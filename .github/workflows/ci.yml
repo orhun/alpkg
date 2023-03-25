@@ -27,11 +27,12 @@ jobs:
         run: |
           wget https://raw.githubusercontent.com/alpinelinux/alpine-chroot-install/v0.14.0/alpine-chroot-install
           echo 'ccbf65f85cdc351851f8ad025bb3e65bae4d5b06  alpine-chroot-install' | sha1sum -c || exit 1
-          sudo cp alpine-chroot-install /usr/bin
+          sudo cp alpine-chroot-install /usr/bin/
 
       - name: Test
         shell: bash
         run: |
+          which alpine-chroot-install
           ./alpkg init --packager "Your Name <your@email.address>" --aports "https://gitlab.alpinelinux.org/alpine/aports"
 
   lint:
