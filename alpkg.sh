@@ -8,10 +8,12 @@ installer='alpine-chroot-install'
 export ARCH=${ARCH:="x86_64"}
 export CHROOT_DIR=${CHROOT_DIR:="/alpine"}
 export ALPINE_BRANCH=${ALPINE_BRANCH:="latest-stable"}
-export ALPINE_PACKAGES=${ALPINE_PACKAGES:="build-base sudo doas bash bash-doc bash-completion alpine-sdk vim zellij"}
+export ALPINE_PACKAGES=${ALPINE_PACKAGES:="build-base sudo doas bash bash-doc bash-completion alpine-sdk atools vim zellij"}
 export CHROOT_KEEP_VARS=${CHROOT_KEEP_VARS:="ARCH TERM SHELL"}
 
 PACKAGER="Orhun Parmaksız <orhunparmaksiz@gmail.com>"
+APORTS_URL="https://gitlab.alpinelinux.org/orhun/aports"
+APORTS_DIR=${APORTS_DIR:="$HOME/aports"}
 
 zellij_layout=$(
 	cat <<-'_EOF_'
@@ -41,6 +43,25 @@ edit_script=$(
 		fi
 		cd "\${pkg}"
 		zellij --layout ../pkg-layout.yml
+	_EOF_
+)
+
+commit_msg_hook=$(
+	cat <<-'_EOF_'
+		#!/bin/sh
+		# https://wiki.alpinelinux.org/wiki/Creating_an_Alpine_package#Commit_your_work
+		case "$2,$3" in
+		  ,|template,)
+		    if git diff-index --diff-filter=A --name-only --cached HEAD \
+		        | grep -q '/APKBUILD$'; then
+		      meta() { git diff --staged | grep "^+$1" | sed 's/.*="\?//;s/"$//';}
+		      printf 'testing/%s: new aport\n\n%s\n%s\n' "$(meta pkgname)" \
+		        "$(meta url)" "$(meta pkgdesc)" "$(cat $1)" > "$1"
+		    else
+		      printf '%s\n\n%s' `git diff-index --name-only --cached HEAD \
+		        | sed -n 's/\/APKBUILD$//p;q'` "$(cat $1)" > "$1"
+		    fi;;
+		esac
 	_EOF_
 )
 
@@ -75,6 +96,12 @@ init-chroot() {
 	echo "Ready for packaging!"
 }
 
+init-aports() {
+	git clone "$APORTS_URL" "$APORTS_DIR"
+	echo "$commit_msg_hook" >"$APORTS_DIR./git/hooks/prepare-commit-msg"
+	chmod +x "$APORTS_DIR./git/hooks/prepare-commit-msg"
+}
+
 run() {
 	if [ ! -d "$CHROOT_DIR" ]; then
 		echo "$CHROOT_DIR is not found. Did you create the chroot?"
@@ -85,4 +112,5 @@ run() {
 }
 
 # init-chroot
+# init-aports
 # run ./pkg-edit.sh "${@}"
