@@ -30,7 +30,9 @@ jobs:
           cp alpine-chroot-install /usr/local/bin
 
       - name: Test
+        shell: bash
         run: |
+          export PATH=$PATH:/usr/local/bin
           ./alpkg init --packager "Your Name <your@email.address>" --aports "https://gitlab.alpinelinux.org/alpine/aports"
 
   lint:
