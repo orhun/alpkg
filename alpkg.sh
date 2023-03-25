@@ -15,8 +15,49 @@ PACKAGER="Orhun Parmaksız <orhunparmaksiz@gmail.com>"
 APORTS_URL="https://gitlab.alpinelinux.org/orhun/aports"
 APORTS_DIR=${APORTS_DIR:="$HOME/aports"}
 
-zellij_layout=$(
-	cat <<-'_EOF_'
+create-pkg-script() {
+	cat <<-'_EOF_' >"$CHROOT_DIR/$HOME/pkg.sh"
+		#!/usr/bin/env bash
+		set -e
+		pkg=""
+		lint_pkg=false
+		edit_pkg=true
+		layout_file="$HOME/pkg-edit-layout.yml"
+		while getopts "lhe" opt; do
+			case ${opt} in
+			e)
+				edit_pkg=true
+				;;
+			l)
+				lint_pkg=true
+				;;
+			h)
+				echo "Usage: $0 [-e] [-l] [-h] <package>"
+				echo "Options:"
+				echo -e "\t-e: Edit the APKBUILD file"
+				echo -e "\t-l: Lint the APKBUILD file"
+				echo -e "\t-h: Show this help message"
+				exit 0
+				;;
+			esac
+		done
+		cd - >/dev/null || exit
+		pkg="${@: -1}"
+		if [ ! -d "$pkg" ]; then
+			newapkbuild "${@}"
+		fi
+		cd "${pkg}" || exit
+		if [ "$lint_pkg" = true ]; then
+			apkbuild-lint APKBUILD
+		elif [ "$edit_pkg" = true ]; then
+			zellij --layout "${layout_file}"
+		fi
+	_EOF_
+	chmod +x "$CHROOT_DIR/$HOME/pkg.sh"
+}
+
+create-zellij-layout() {
+	cat <<-'_EOF_' >"$CHROOT_DIR/$HOME/pkg-edit-layout.yml"
 		# https://zellij.dev/old-documentation/layouts.html
 		tabs:
 		  - direction: Vertical
@@ -31,44 +72,12 @@ zellij_layout=$(
 		        split_size:
 		          Percent: 50
 	_EOF_
-)
-
-edit_script=$(
-	cat <<-'_EOF_'
-		#!/usr/bin/env bash
-		cd - >/dev/null
-		pkg="\${@: -1}"
-		if [ ! -d "\$pkg" ]; then
-			newapkbuild "\${@}"
-		fi
-		cd "\${pkg}"
-		zellij --layout ../pkg-layout.yml
-	_EOF_
-)
-
-commit_msg_hook=$(
-	cat <<-'_EOF_'
-		#!/bin/sh
-		# https://wiki.alpinelinux.org/wiki/Creating_an_Alpine_package#Commit_your_work
-		case "$2,$3" in
-		  ,|template,)
-		    if git diff-index --diff-filter=A --name-only --cached HEAD \
-		        | grep -q '/APKBUILD$'; then
-		      meta() { git diff --staged | grep "^+$1" | sed 's/.*="\?//;s/"$//';}
-		      printf 'testing/%s: new aport\n\n%s\n%s\n' "$(meta pkgname)" \
-		        "$(meta url)" "$(meta pkgdesc)" "$(cat $1)" > "$1"
-		    else
-		      printf '%s\n\n%s' `git diff-index --name-only --cached HEAD \
-		        | sed -n 's/\/APKBUILD$//p;q'` "$(cat $1)" > "$1"
-		    fi;;
-		esac
-	_EOF_
-)
+}
 
 init-chroot() {
 	if ! command -v "$installer" &>/dev/null; then
 		echo "$installer could not be found!"
-		exit
+		exit 1
 	fi
 
 	echo "Creating a chroot in $CHROOT_DIR"
@@ -85,32 +94,47 @@ init-chroot() {
 		echo "PACKAGER=\"$PACKAGER\"" >>/etc/abuild.conf
 		echo 'MAINTAINER="$PACKAGER"' >>/etc/abuild.conf
 	_EOF_
+	run abuild-keygen -a -i -n
 
-	run bash <<-_EOF_
-		abuild-keygen -a -i -n
-		echo "$zellij_layout" >pkg-layout.yml
-		echo "$edit_script" >pkg-edit.sh
-		chmod +x pkg-edit.sh
-	_EOF_
+	echo "Creating scripts..."
+	create-pkg-script
+	create-zellij-layout
 
 	echo "Ready for packaging!"
 }
 
 init-aports() {
 	git clone "$APORTS_URL" "$APORTS_DIR"
-	echo "$commit_msg_hook" >"$APORTS_DIR./git/hooks/prepare-commit-msg"
-	chmod +x "$APORTS_DIR./git/hooks/prepare-commit-msg"
+	cat <<-'_EOF_' >"$APORTS_DIR/.git/hooks/prepare-commit-msg"
+		#!/bin/sh
+		# https://wiki.alpinelinux.org/wiki/Creating_an_Alpine_package#Commit_your_work
+		case "$2,$3" in
+		  ,|template,)
+		    if git diff-index --diff-filter=A --name-only --cached HEAD \
+		        | grep -q '/APKBUILD$'; then
+		      meta() { git diff --staged | grep "^+$1" | sed 's/.*="\?//;s/"$//';}
+		      printf 'testing/%s: new aport\n\n%s\n%s\n' "$(meta pkgname)" \
+		        "$(meta url)" "$(meta pkgdesc)" "$(cat $1)" > "$1"
+		    else
+		      printf '%s\n\n%s' `git diff-index --name-only --cached HEAD \
+		        | sed -n 's/\/APKBUILD$//p;q'` "$(cat $1)" > "$1"
+		    fi;;
+		esac
+	_EOF_
+	chmod +x "$APORTS_DIR/.git/hooks/prepare-commit-msg"
 }
 
 run() {
 	if [ ! -d "$CHROOT_DIR" ]; then
 		echo "$CHROOT_DIR is not found. Did you create the chroot?"
-		exit
+		exit 1
 	fi
 	cd "$HOME"
 	"$CHROOT_DIR/enter-chroot" -u "$USER" "${@}"
 }
 
+# create-pkg-script
 # init-chroot
 # init-aports
-# run ./pkg-edit.sh "${@}"
+# run ./pkg.sh "$1"
+# run ./pkg.sh -l "$1"
