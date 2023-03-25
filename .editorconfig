@@ -3,5 +3,5 @@
 root = true
 
 [{*.sh,*.yml}]
-indent_style = tab
+indent_style = spaces
 indent_size = 2
