@@ -24,6 +24,7 @@ show-usage() {
 	echo "Options:"
 	echo "  --packager \"Your Name <your@email.address>\"              The name and email address of the package maintainer."
 	echo "  --aports \"https://gitlab.alpinelinux.org/<user>/aports\"  The URL of the remote APorts repository."
+	exit 0
 }
 
 create-pkg-script() {
@@ -35,33 +36,33 @@ create-pkg-script() {
 		edit_pkg=true
 		layout_file="$HOME/pkg-edit-layout.yml"
 		while getopts ":lhe" opt; do
-			case ${opt} in
-			e)
-				edit_pkg=true
-				;;
-			l)
-				lint_pkg=true
-				;;
-			h)
-				echo "Usage: $0 [-e] [-l] [-h] <package>"
-				echo "Options:"
-				echo -e "\t-e: Edit the APKBUILD file"
-				echo -e "\t-l: Lint the APKBUILD file"
-				echo -e "\t-h: Show this help message"
-				exit 0
-				;;
-			esac
+		  case ${opt} in
+		  e)
+		    edit_pkg=true
+		    ;;
+		  l)
+		    lint_pkg=true
+		    ;;
+		  h)
+		    echo "Usage: $0 [-e] [-l] [-h] <package>"
+		    echo "Options:"
+		    echo -e "\t-e: Edit the APKBUILD file"
+		    echo -e "\t-l: Lint the APKBUILD file"
+		    echo -e "\t-h: Show this help message"
+		    exit 0
+		    ;;
+		  esac
 		done
 		cd - >/dev/null || exit
 		pkg="${@: -1}"
 		if [ ! -d "$pkg" ]; then
-			newapkbuild "${@}"
+		  newapkbuild "${@}"
 		fi
 		cd "${pkg}" || exit
 		if [ "$lint_pkg" = true ]; then
-			apkbuild-lint APKBUILD
+		  apkbuild-lint APKBUILD
 		elif [ "$edit_pkg" = true ]; then
-			zellij --layout "${layout_file}"
+		  zellij --layout "${layout_file}"
 		fi
 	_EOF_
 	chmod +x "$CHROOT_DIR/$HOME/pkg.sh"
@@ -185,7 +186,6 @@ case "$1" in
 init)
 	if [ "$#" -ne 5 ] || [ "$2" != "--packager" ] || [ "$4" != "--aports" ]; then
 		show-usage "$0"
-		exit 1
 	fi
 	PACKAGER="${3//\"/}"
 	APORTS_URL="${5//\"/}"
@@ -204,6 +204,7 @@ update)
 	;;
 *)
 	show-usage "$0"
-	exit 1
 	;;
 esac
+
+# vim: set ts=2:
