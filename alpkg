@@ -13,7 +13,7 @@ export ALPINE_PACKAGES=${ALPINE_PACKAGES:="build-base doas bash bash-doc bash-co
 export CHROOT_KEEP_VARS=${CHROOT_KEEP_VARS:="ARCH TERM SHELL"}
 
 show-usage() {
-  echo "Usage: $1 [init|edit|fetch|update] [<package>]"
+  echo "Usage: alpkg [init|edit|fetch|update] [<package>]"
   echo ""
   echo "Commands:"
   echo "  init              Initialize an Alpine chroot."
@@ -191,7 +191,7 @@ destroy() {
 case "$1" in
 init)
   if [ "$#" -ne 5 ] || [ "$2" != "--packager" ] || [ "$4" != "--aports" ]; then
-    show-usage "$0"
+    show-usage
   fi
   PACKAGER="${3//\"/}"
   APORTS_URL="${5//\"/}"
@@ -212,7 +212,7 @@ destroy)
   destroy
   ;;
 *)
-  show-usage "$0"
+  show-usage
   ;;
 esac
 
