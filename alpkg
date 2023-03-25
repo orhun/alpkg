@@ -13,22 +13,22 @@ export ALPINE_PACKAGES=${ALPINE_PACKAGES:="build-base doas bash bash-doc bash-co
 export CHROOT_KEEP_VARS=${CHROOT_KEEP_VARS:="ARCH TERM SHELL"}
 
 show-usage() {
-	echo "Usage: $1 [init|edit|fetch|update] [<package>]"
-	echo ""
-	echo "Commands:"
-	echo "  init              Initialize an Alpine chroot."
-	echo "  edit <package>    Edit or create a package."
-	echo "  fetch <package>   Fetch an existing package from the remote repository."
-	echo "  update <package>  Update the package on the remote repository."
-	echo ""
-	echo "Options:"
-	echo "  --packager \"Your Name <your@email.address>\"              The name and email address of the package maintainer."
-	echo "  --aports \"https://gitlab.alpinelinux.org/<user>/aports\"  The URL of the remote APorts repository."
-	exit 0
+  echo "Usage: $1 [init|edit|fetch|update] [<package>]"
+  echo ""
+  echo "Commands:"
+  echo "  init              Initialize an Alpine chroot."
+  echo "  edit <package>    Edit or create a package."
+  echo "  fetch <package>   Fetch an existing package from the remote repository."
+  echo "  update <package>  Update the package on the remote repository."
+  echo ""
+  echo "Options:"
+  echo "  --packager \"Your Name <your@email.address>\"              The name and email address of the package maintainer."
+  echo "  --aports \"https://gitlab.alpinelinux.org/<user>/aports\"  The URL of the remote APorts repository."
+  exit 0
 }
 
 create-pkg-script() {
-	cat <<-'_EOF_' >"$CHROOT_DIR/$HOME/pkg.sh"
+  cat <<-'_EOF_' >"$CHROOT_DIR/$HOME/pkg.sh"
 		#!/usr/bin/env bash
 		set -e
 		pkg=""
@@ -65,11 +65,11 @@ create-pkg-script() {
 		  zellij --layout "${layout_file}"
 		fi
 	_EOF_
-	chmod +x "$CHROOT_DIR/$HOME/pkg.sh"
+  chmod +x "$CHROOT_DIR/$HOME/pkg.sh"
 }
 
 create-zellij-layout() {
-	cat <<-'_EOF_' >"$CHROOT_DIR/$HOME/pkg-edit-layout.yml"
+  cat <<-'_EOF_' >"$CHROOT_DIR/$HOME/pkg-edit-layout.yml"
 		# https://zellij.dev/old-documentation/layouts.html
 		tabs:
 		  - direction: Vertical
@@ -87,16 +87,16 @@ create-zellij-layout() {
 }
 
 init-chroot() {
-	[ "$(id -u)" -eq 0 ] || _sudo='sudo'
-	installer='alpine-chroot-install'
-	if ! command -v "$installer" &>/dev/null; then
-		echo "$installer could not be found!"
-		exit 1
-	fi
-	echo "Creating a chroot in $CHROOT_DIR"
-	$_sudo -E "$installer"
-	echo "Preparing the build environment..."
-	"$CHROOT_DIR/enter-chroot" bash <<-_EOF_
+  [ "$(id -u)" -eq 0 ] || _sudo='sudo'
+  installer='alpine-chroot-install'
+  if ! command -v "$installer" &>/dev/null; then
+    echo "$installer could not be found!"
+    exit 1
+  fi
+  echo "Creating a chroot in $CHROOT_DIR"
+  $_sudo -E "$installer"
+  echo "Preparing the build environment..."
+  "$CHROOT_DIR/enter-chroot" bash <<-_EOF_
 		adduser "$USER" wheel
 		echo "permit nopass :wheel" >/etc/doas.d/doas.conf
 		adduser "$USER" abuild
@@ -106,19 +106,19 @@ init-chroot() {
 		echo "PACKAGER=\"$PACKAGER\"" >>/etc/abuild.conf
 		echo 'MAINTAINER="$PACKAGER"' >>/etc/abuild.conf
 	_EOF_
-	run abuild-keygen -a -i -n
+  run abuild-keygen -a -i -n
 
-	echo "Creating scripts..."
-	create-pkg-script
-	create-zellij-layout
+  echo "Creating scripts..."
+  create-pkg-script
+  create-zellij-layout
 }
 
 init-aports() {
-	echo "Setting up the aports repository in $APORTS_DIR"
-	git clone "$APORTS_URL" "$APORTS_DIR"
-	cd "$APORTS_DIR"
-	git remote add base "$APORTS_UPSTREAM_URL"
-	cat <<-'_EOF_' >".git/hooks/prepare-commit-msg"
+  echo "Setting up the aports repository in $APORTS_DIR"
+  git clone "$APORTS_URL" "$APORTS_DIR"
+  cd "$APORTS_DIR"
+  git remote add base "$APORTS_UPSTREAM_URL"
+  cat <<-'_EOF_' >".git/hooks/prepare-commit-msg"
 		#!/bin/sh
 		# https://wiki.alpinelinux.org/wiki/Creating_an_Alpine_package#Commit_your_work
 		case "$2,$3" in
@@ -134,77 +134,78 @@ init-aports() {
 		    fi;;
 		esac
 	_EOF_
-	chmod +x ".git/hooks/prepare-commit-msg"
+  chmod +x ".git/hooks/prepare-commit-msg"
 }
 
 fetch-pkg() {
-	cd "$APORTS_DIR"
-	git stash
-	git checkout master
-	git pull base master
-	apkbuild=$(find "$(pwd)" -wholename "*/$1/APKBUILD")
-	if [ -z "${apkbuild}" ]; then
-		echo "Package is not found!"
-		exit 1
-	fi
-	mkdir "$CHROOT_DIR/$HOME/$1" || true
-	cp "$apkbuild" "$CHROOT_DIR/$HOME/$1"
-	run ./pkg.sh "$1"
+  cd "$APORTS_DIR"
+  git stash
+  git checkout master
+  git pull base master
+  apkbuild=$(find "$(pwd)" -wholename "*/$1/APKBUILD")
+  if [ -z "${apkbuild}" ]; then
+    echo "Package is not found!"
+    exit 1
+  fi
+  mkdir "$CHROOT_DIR/$HOME/$1" || true
+  cp "$apkbuild" "$CHROOT_DIR/$HOME/$1"
+  run ./pkg.sh "$1"
 }
 
 update-pkg() {
-	run ./pkg.sh -l "$1"
-	cd "$APORTS_DIR"
-	git stash
-	git checkout master
-	git pull base master
-	apkbuild=$(find "$(pwd)" -wholename "*/$1/APKBUILD")
-	if [ -z "${apkbuild}" ]; then
-		mkdir "$APORTS_DIR/testing/$1"
-		apkbuild="$APORTS_DIR/testing/$1/APKBUILD"
-		echo "Adding a new package to aports."
-	else
-		echo "Package is found in aports."
-	fi
-	git branch -D "aport/$1" || true
-	git checkout -b "aport/$1"
-	cp "$CHROOT_DIR/$HOME/$1/APKBUILD" "$apkbuild"
-	git add "$apkbuild"
-	git commit
+  run ./pkg.sh -l "$1"
+  cd "$APORTS_DIR"
+  git stash
+  git checkout master
+  git pull base master
+  apkbuild=$(find "$(pwd)" -wholename "*/$1/APKBUILD")
+  if [ -z "${apkbuild}" ]; then
+    mkdir "$APORTS_DIR/testing/$1"
+    apkbuild="$APORTS_DIR/testing/$1/APKBUILD"
+    echo "Adding a new package to aports."
+  else
+    echo "Package is found in aports."
+  fi
+  git branch -D "aport/$1" || true
+  git checkout -b "aport/$1"
+  cp "$CHROOT_DIR/$HOME/$1/APKBUILD" "$apkbuild"
+  git add "$apkbuild"
+  git commit
 }
 
 run() {
-	if [ ! -d "$CHROOT_DIR" ]; then
-		echo "$CHROOT_DIR is not found. Did you create the chroot?"
-		exit 1
-	fi
-	cd "$HOME"
-	"$CHROOT_DIR/enter-chroot" -u "$USER" "${@}"
+  if [ ! -d "$CHROOT_DIR" ]; then
+    echo "$CHROOT_DIR is not found. Did you create the chroot?"
+    exit 1
+  fi
+  cd "$HOME"
+  "$CHROOT_DIR/enter-chroot" -u "$USER" "${@}"
 }
 
+create-pkg-script
 case "$1" in
 init)
-	if [ "$#" -ne 5 ] || [ "$2" != "--packager" ] || [ "$4" != "--aports" ]; then
-		show-usage "$0"
-	fi
-	PACKAGER="${3//\"/}"
-	APORTS_URL="${5//\"/}"
-	init-chroot
-	init-aports
-	echo "Ready for packaging!"
-	;;
+  if [ "$#" -ne 5 ] || [ "$2" != "--packager" ] || [ "$4" != "--aports" ]; then
+    show-usage "$0"
+  fi
+  PACKAGER="${3//\"/}"
+  APORTS_URL="${5//\"/}"
+  init-chroot
+  init-aports
+  echo "Ready for packaging!"
+  ;;
 edit)
-	run ./pkg.sh "${@:2}"
-	;;
+  run ./pkg.sh "${@:2}"
+  ;;
 fetch)
-	fetch-pkg "$2"
-	;;
+  fetch-pkg "$2"
+  ;;
 update)
-	update-pkg "$2"
-	;;
+  update-pkg "$2"
+  ;;
 *)
-	show-usage "$0"
-	;;
+  show-usage "$0"
+  ;;
 esac
 
 # vim: set ts=2:
