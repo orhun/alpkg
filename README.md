@@ -1,5 +1,7 @@
 # `alpkg` 🏔
 
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/orhun/alpkg/ci.yml?logo=GitHub)](https://github.com/orhun/alpkg/actions)
+
 **Set up Alpine Linux packaging environment with a breeze!**
 
 ## Requirements
