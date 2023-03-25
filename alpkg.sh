@@ -2,18 +2,29 @@
 
 set -e
 
-[ "$(id -u)" -eq 0 ] || _sudo='sudo'
-installer='alpine-chroot-install'
-
+PACKAGER=""
+APORTS_URL=""
+APORTS_UPSTREAM_URL="https://gitlab.alpinelinux.org/alpine/aports"
 export ARCH=${ARCH:="x86_64"}
 export CHROOT_DIR=${CHROOT_DIR:="/alpine"}
+export APORTS_DIR=${APORTS_DIR:="$HOME/aports"}
 export ALPINE_BRANCH=${ALPINE_BRANCH:="latest-stable"}
-export ALPINE_PACKAGES=${ALPINE_PACKAGES:="build-base sudo doas bash bash-doc bash-completion alpine-sdk atools vim zellij"}
+export ALPINE_PACKAGES=${ALPINE_PACKAGES:="build-base doas bash bash-doc bash-completion alpine-sdk atools vim zellij"}
 export CHROOT_KEEP_VARS=${CHROOT_KEEP_VARS:="ARCH TERM SHELL"}
 
-PACKAGER="Orhun Parmaksız <orhunparmaksiz@gmail.com>"
-APORTS_URL="https://gitlab.alpinelinux.org/alpine/aports"
-APORTS_DIR=${APORTS_DIR:="$HOME/aports"}
+show-usage() {
+	echo "Usage: $1 [init|edit|fetch|update] [<package>]"
+	echo ""
+	echo "Commands:"
+	echo "  init              Initialize an Alpine chroot."
+	echo "  edit <package>    Edit or create a package."
+	echo "  fetch <package>   Fetch an existing package from the remote repository."
+	echo "  update <package>  Update the package on the remote repository."
+	echo ""
+	echo "Options:"
+	echo "  --packager \"Your Name <your@email.address>\"              The name and email address of the package maintainer."
+	echo "  --aports \"https://gitlab.alpinelinux.org/<user>/aports\"  The URL of the remote APorts repository."
+}
 
 create-pkg-script() {
 	cat <<-'_EOF_' >"$CHROOT_DIR/$HOME/pkg.sh"
@@ -23,7 +34,7 @@ create-pkg-script() {
 		lint_pkg=false
 		edit_pkg=true
 		layout_file="$HOME/pkg-edit-layout.yml"
-		while getopts "lhe" opt; do
+		while getopts ":lhe" opt; do
 			case ${opt} in
 			e)
 				edit_pkg=true
@@ -75,14 +86,14 @@ create-zellij-layout() {
 }
 
 init-chroot() {
+	[ "$(id -u)" -eq 0 ] || _sudo='sudo'
+	installer='alpine-chroot-install'
 	if ! command -v "$installer" &>/dev/null; then
 		echo "$installer could not be found!"
 		exit 1
 	fi
-
 	echo "Creating a chroot in $CHROOT_DIR"
 	$_sudo -E "$installer"
-
 	echo "Preparing the build environment..."
 	"$CHROOT_DIR/enter-chroot" bash <<-_EOF_
 		adduser "$USER" wheel
@@ -99,13 +110,14 @@ init-chroot() {
 	echo "Creating scripts..."
 	create-pkg-script
 	create-zellij-layout
-
-	echo "Ready for packaging!"
 }
 
 init-aports() {
+	echo "Setting up the aports repository in $APORTS_DIR"
 	git clone "$APORTS_URL" "$APORTS_DIR"
-	cat <<-'_EOF_' >"$APORTS_DIR/.git/hooks/prepare-commit-msg"
+	cd "$APORTS_DIR"
+	git remote add base "$APORTS_UPSTREAM_URL"
+	cat <<-'_EOF_' >".git/hooks/prepare-commit-msg"
 		#!/bin/sh
 		# https://wiki.alpinelinux.org/wiki/Creating_an_Alpine_package#Commit_your_work
 		case "$2,$3" in
@@ -121,20 +133,20 @@ init-aports() {
 		    fi;;
 		esac
 	_EOF_
-	chmod +x "$APORTS_DIR/.git/hooks/prepare-commit-msg"
+	chmod +x ".git/hooks/prepare-commit-msg"
 }
 
 fetch-pkg() {
 	cd "$APORTS_DIR"
 	git stash
 	git checkout master
-	git pull
+	git pull base master
 	apkbuild=$(find "$(pwd)" -wholename "*/$1/APKBUILD")
 	if [ -z "${apkbuild}" ]; then
 		echo "Package is not found!"
 		exit 1
 	fi
-	mkdir "$CHROOT_DIR/$HOME/$1"
+	mkdir "$CHROOT_DIR/$HOME/$1" || true
 	cp "$apkbuild" "$CHROOT_DIR/$HOME/$1"
 	run ./pkg.sh "$1"
 }
@@ -144,7 +156,7 @@ update-pkg() {
 	cd "$APORTS_DIR"
 	git stash
 	git checkout master
-	git pull
+	git pull base master
 	apkbuild=$(find "$(pwd)" -wholename "*/$1/APKBUILD")
 	if [ -z "${apkbuild}" ]; then
 		mkdir "$APORTS_DIR/testing/$1"
@@ -169,9 +181,29 @@ run() {
 	"$CHROOT_DIR/enter-chroot" -u "$USER" "${@}"
 }
 
-# init-chroot
-# init-aports
-# run ./pkg.sh "$1"
-# run ./pkg.sh -l "$1"
-# fetch-pkg "$1"
-# update-pkg "$1"
+case "$1" in
+init)
+	if [ "$#" -ne 5 ] || [ "$2" != "--packager" ] || [ "$4" != "--aports" ]; then
+		show-usage "$0"
+		exit 1
+	fi
+	PACKAGER="${3//\"/}"
+	APORTS_URL="${5//\"/}"
+	init-chroot
+	init-aports
+	echo "Ready for packaging!"
+	;;
+edit)
+	run ./pkg.sh "${@:2}"
+	;;
+fetch)
+	fetch-pkg "$2"
+	;;
+update)
+	update-pkg "$2"
+	;;
+*)
+	show-usage "$0"
+	exit 1
+	;;
+esac
