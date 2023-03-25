@@ -23,6 +23,12 @@ jobs:
       - name: Checkout the repository
         uses: actions/checkout@v3
 
+      - name: Install alpine-chroot-install
+        run: |
+          wget https://raw.githubusercontent.com/alpinelinux/alpine-chroot-install/v0.14.0/alpine-chroot-install
+          echo 'ccbf65f85cdc351851f8ad025bb3e65bae4d5b06  alpine-chroot-install' | sha1sum -c || exit 1
+          cp alpine-chroot-install ~/.local/bin/
+
       - name: Test
         run: |
           sudo ./alpkg init --packager "Your Name <your@email.address>" --aports "https://gitlab.alpinelinux.org/alpine/aports"
