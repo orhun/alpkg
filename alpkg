@@ -20,6 +20,7 @@ show-usage() {
   echo "  edit <package>    Edit or create a package."
   echo "  fetch <package>   Fetch an existing package from the remote repository."
   echo "  update <package>  Update the package on the remote repository."
+  echo "  destroy           Remove the chroot and repository."
   echo ""
   echo "Options:"
   echo "  --packager \"Your Name <your@email.address>\"              The name and email address of the package maintainer."
@@ -182,7 +183,11 @@ run() {
   "$CHROOT_DIR/enter-chroot" -u "$USER" "${@}"
 }
 
-create-pkg-script
+destroy() {
+  echo rm -rf "$APORTS_DIR"
+  "$CHROOT_DIR/destroy" --remove
+}
+
 case "$1" in
 init)
   if [ "$#" -ne 5 ] || [ "$2" != "--packager" ] || [ "$4" != "--aports" ]; then
@@ -202,6 +207,9 @@ fetch)
   ;;
 update)
   update-pkg "$2"
+  ;;
+destroy)
+  destroy
   ;;
 *)
   show-usage "$0"

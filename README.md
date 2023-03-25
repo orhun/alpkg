@@ -1,4 +1,4 @@
-## `alpkg` 🏔
+# `alpkg` 🏔
 
 **Set up Alpine Linux packaging environment with a breeze!**
 
@@ -17,6 +17,7 @@ Commands:
   edit <package>    Edit or create a package.
   fetch <package>   Fetch an existing package from the remote repository.
   update <package>  Update the package on the remote repository.
+  destroy           Remove the chroot and repository.
 
 Options:
   --packager "Your Name <your@email.address>"              The name and email address of the package maintainer.
