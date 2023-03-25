@@ -88,14 +88,14 @@ create-zellij-layout() {
 }
 
 init-chroot() {
-  [ "$(id -u)" -eq 0 ] || _sudo='sudo'
+  [ "$(id -u)" -eq 0 ] || _sudo='sudo -E'
   installer='alpine-chroot-install'
   if ! command -v "$installer" &>/dev/null; then
     echo "$installer could not be found!"
     exit 1
   fi
   echo "Creating a chroot in $CHROOT_DIR"
-  $_sudo -E "$installer"
+  $_sudo "$installer"
   echo "Preparing the build environment..."
   "$CHROOT_DIR/enter-chroot" bash <<-_EOF_
 		adduser "$USER" wheel
