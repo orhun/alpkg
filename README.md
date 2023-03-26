@@ -47,7 +47,7 @@ It is possible to pass options to `alpine-chroot-install` via environment variab
 
 ![alpkg init](assets/init.gif)
 
-</details><br>
+</details>
 
 \* You need to create an account on [https://gitlab.alpinelinux.org](https://gitlab.alpinelinux.org) and fork the [aports repository](https://gitlab.alpinelinux.org/alpine/aports) under your user.
 
@@ -78,7 +78,7 @@ alpkg edit testpkg
 
 ![alpkg edit I](assets/edit-1.gif)
 
-</details><br>
+</details>
 
 If the package _already exists_, you can also use `edit` command to edit the contents of the `APKBUILD`.
 
