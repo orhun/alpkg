@@ -4,6 +4,8 @@
 
 **Set up Alpine Linux packaging environment with a breeze!**
 
+![demo](assets/demo.gif)
+
 ## Requirements
 
 - [alpine-chroot-install](https://github.com/alpinelinux/alpine-chroot-install)
