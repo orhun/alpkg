@@ -8,9 +8,10 @@ APORTS_UPSTREAM_URL="https://gitlab.alpinelinux.org/alpine/aports"
 export ARCH=${ARCH:="x86_64"}
 export CHROOT_DIR=${CHROOT_DIR:="/alpine"}
 export APORTS_DIR=${APORTS_DIR:="$HOME/aports"}
+export ALPINE_PACKAGE_DIR=${ALPINE_PACKAGE_DIR:="$HOME/apkbuilds"}
 export ALPINE_BRANCH=${ALPINE_BRANCH:="latest-stable"}
 export ALPINE_PACKAGES=${ALPINE_PACKAGES:="build-base doas bash bash-doc bash-completion alpine-sdk atools vim zellij"}
-export CHROOT_KEEP_VARS=${CHROOT_KEEP_VARS:="ARCH TERM SHELL"}
+export CHROOT_KEEP_VARS=${CHROOT_KEEP_VARS:="ARCH TERM SHELL ALPINE_PACKAGE_DIR"}
 
 show-usage() {
   echo "https://github.com/orhun/alpkg"
@@ -31,13 +32,13 @@ show-usage() {
 }
 
 create-pkg-script() {
-  cat <<-'_EOF_' >"$CHROOT_DIR/$HOME/pkg.sh"
+  cat <<-'_EOF_' >"$CHROOT_DIR/$ALPINE_PACKAGE_DIR/pkg.sh"
 		#!/usr/bin/env bash
 		set -e
 		pkg=""
 		lint_pkg=false
 		edit_pkg=true
-		layout_file="$HOME/pkg-edit-layout.yml"
+		layout_file="$ALPINE_PACKAGE_DIR/pkg-edit-layout.yml"
 		while getopts ":lhe" opt; do
 		  case ${opt} in
 		  e)
@@ -56,7 +57,7 @@ create-pkg-script() {
 		    ;;
 		  esac
 		done
-		cd - >/dev/null || exit
+		cd "$ALPINE_PACKAGE_DIR" || exit
 		pkg="${@: -1}"
 		if [ ! -d "$pkg" ]; then
 		  newapkbuild "${@}"
@@ -68,11 +69,11 @@ create-pkg-script() {
 		  zellij --layout "${layout_file}"
 		fi
 	_EOF_
-  chmod +x "$CHROOT_DIR/$HOME/pkg.sh"
+  chmod +x "$CHROOT_DIR/$ALPINE_PACKAGE_DIR/pkg.sh"
 }
 
 create-zellij-layout() {
-  cat <<-'_EOF_' >"$CHROOT_DIR/$HOME/pkg-edit-layout.yml"
+  cat <<-'_EOF_' >"$CHROOT_DIR/$ALPINE_PACKAGE_DIR/pkg-edit-layout.yml"
 		# https://zellij.dev/old-documentation/layouts.html
 		tabs:
 		  - direction: Vertical
@@ -103,6 +104,8 @@ init-chroot() {
 		adduser "$USER" wheel
 		echo "permit nopass :wheel" >/etc/doas.d/doas.conf
 		adduser "$USER" abuild
+		mkdir -p "$ALPINE_PACKAGE_DIR"
+		chown "$USER" "$ALPINE_PACKAGE_DIR"
 		mkdir -p /var/cache/distfiles
 		chgrp abuild /var/cache/distfiles
 		chmod g+w /var/cache/distfiles
@@ -156,13 +159,13 @@ fetch-pkg() {
     echo "Package is not found!"
     exit 1
   fi
-  mkdir "$CHROOT_DIR/$HOME/$1" || true
-  cp "$apkbuild" "$CHROOT_DIR/$HOME/$1"
-  run ./pkg.sh "$1"
+  mkdir "$CHROOT_DIR/$ALPINE_PACKAGE_DIR/$1" || true
+  cp "$apkbuild" "$CHROOT_DIR/$ALPINE_PACKAGE_DIR/$1"
+  run "$ALPINE_PACKAGE_DIR/pkg.sh" "$1"
 }
 
 update-pkg() {
-  run ./pkg.sh -l "$1"
+  run "$ALPINE_PACKAGE_DIR/pkg.sh" -l "$1"
   cd "$APORTS_DIR"
   git stash
   git checkout master
@@ -177,7 +180,7 @@ update-pkg() {
   fi
   git branch -D "aport/$1" || true
   git checkout -b "aport/$1"
-  cp "$CHROOT_DIR/$HOME/$1/APKBUILD" "$apkbuild"
+  cp "$CHROOT_DIR/$ALPINE_PACKAGE_DIR/$1/APKBUILD" "$apkbuild"
   git add "$apkbuild"
   git commit
   git show
@@ -188,12 +191,12 @@ run() {
     echo "$CHROOT_DIR is not found. Did you create the chroot?"
     exit 1
   fi
-  cd "$HOME"
   "$CHROOT_DIR/enter-chroot" -u "$USER" "${@}"
 }
 
 destroy() {
   echo rm -rf "$APORTS_DIR"
+  echo rm -rf "$ALPINE_PACKAGE_DIR"
   "$CHROOT_DIR/destroy" --remove
 }
 
@@ -209,7 +212,7 @@ init)
   echo "Ready for packaging!"
   ;;
 edit)
-  run ./pkg.sh "${@:2}"
+  run "$ALPINE_PACKAGE_DIR/pkg.sh" "${@:2}"
   ;;
 fetch)
   fetch-pkg "$2"
