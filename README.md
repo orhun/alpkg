@@ -28,6 +28,11 @@ Commands:
 Options:
   --packager "Your Name <your@email.address>"              The name and email address of the package maintainer.
   --aports "https://gitlab.alpinelinux.org/<user>/aports"  The URL of the remote APorts repository.
+
+Environment variables:
+  CHROOT_DIR   Directory for Alpine chroot. (default: /alpine)
+  APORTS_DIR   Directory for remote APorts repository. (default: /home/user/aports)
+  PACKAGE_DIR  Directory for APK packages built and stored. (default: /home/user/apkbuilds in chroot)
 ```
 
 ## Features
