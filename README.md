@@ -51,7 +51,7 @@ It is possible to pass options to `alpine-chroot-install` via environment variab
 
 \* You need to create an account on [https://gitlab.alpinelinux.org](https://gitlab.alpinelinux.org) and fork the [aports repository](https://gitlab.alpinelinux.org/alpine/aports) under your user.
 
-\* If you run `alpkg init` in your `$HOME` directory, Alpine working directory will point to `$HOME/apkbuilds`.
+\* If you run `alpkg init` in your `$HOME` directory, the Alpine working directory will point to `$HOME/apkbuilds`.
 
 ### `edit`
 
