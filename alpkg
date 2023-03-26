@@ -28,6 +28,11 @@ show-usage() {
   echo "Options:"
   echo "  --packager \"Your Name <your@email.address>\"              The name and email address of the package maintainer."
   echo "  --aports \"https://gitlab.alpinelinux.org/<user>/aports\"  The URL of the remote APorts repository."
+  echo ""
+  echo "Environment variables:"
+  echo "  CHROOT_DIR          Directory for Alpine chroot. (default: /alpine)"
+  echo "  APORTS_DIR          Directory for remote APorts repository. (default: $HOME/aports)"
+  echo "  ALPINE_PACKAGE_DIR  Directory for APK packages built and stored. (default: $HOME/apkbuilds in chroot)"
   exit 0
 }
 
