@@ -138,6 +138,12 @@ init-aports() {
 		esac
 	_EOF_
   chmod +x ".git/hooks/prepare-commit-msg"
+  if [[ ! $(git config --get user.name) ]]; then
+    git config user.name "$(echo "${PACKAGER%%<*}" | xargs)"
+  fi
+  if [[ ! $(git config --get user.email) ]]; then
+    git config user.email "$(echo "${PACKAGER#*<}" | tr -d '[:space:]>')"
+  fi
 }
 
 fetch-pkg() {
