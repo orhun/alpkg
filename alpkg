@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
 set -e
+_VERSION="0.0.1"
+
+#=======================  C o n s t a n t s  =======================#
 
 PACKAGER=""
 APORTS_URL=""
@@ -13,8 +16,10 @@ export ALPINE_BRANCH=${ALPINE_BRANCH:="latest-stable"}
 export ALPINE_PACKAGES=${ALPINE_PACKAGES:="build-base doas bash bash-doc bash-completion alpine-sdk atools vim zellij"}
 export CHROOT_KEEP_VARS=${CHROOT_KEEP_VARS:="ARCH TERM SHELL PACKAGE_DIR"}
 
+#=======================  F u n c t i o n s  =======================#
+
 show-usage() {
-  echo "https://github.com/orhun/alpkg"
+  echo "https://github.com/orhun/alpkg ($_VERSION)"
   echo ""
   echo "Usage: alpkg [init|edit|fetch|update] [<package>]"
   echo ""
@@ -204,6 +209,8 @@ destroy() {
   echo rm -rf "$PACKAGE_DIR"
   "$CHROOT_DIR/destroy" --remove
 }
+
+#============================  M a i n  ============================#
 
 case "$1" in
 init)
