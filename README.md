@@ -43,7 +43,7 @@ alpkg init --packager "Your Name <your@email.address>" --aports "https://gitlab.
 It is possible to pass options to `alpine-chroot-install` via environment variables.
 
 <details>
-<summary><b>Demo</b></summary>
+<summary>Demo></summary>
 
 ![alpkg init](assets/init.gif)
 
@@ -74,7 +74,7 @@ alpkg edit testpkg
 ```
 
 <details>
-<summary><b>Demo</b></summary>
+<summary>Demo></summary>
 
 ![alpkg edit I](assets/edit-1.gif)
 
@@ -83,7 +83,7 @@ alpkg edit testpkg
 If the package _already exists_, you can also use `edit` command to edit the contents of the `APKBUILD`.
 
 <details>
-<summary><b>Demo</b></summary>
+<summary>Demo></summary>
 
 ![alpkg edit II](assets/edit-2.gif)
 
@@ -98,7 +98,7 @@ alpkg fetch <package_name>
 ```
 
 <details>
-<summary><b>Demo</b></summary>
+<summary>Demo></summary>
 
 ![alpkg fetch](assets/fetch.gif)
 
@@ -113,7 +113,7 @@ alpkg update <package_name>
 ```
 
 <details>
-<summary><b>Demo</b></summary>
+<summary>Demo></summary>
 
 ![alpkg update](assets/update.gif)
 
