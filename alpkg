@@ -172,6 +172,7 @@ update-pkg() {
   cp "$CHROOT_DIR/$HOME/$1/APKBUILD" "$apkbuild"
   git add "$apkbuild"
   git commit
+  git show
 }
 
 run() {
