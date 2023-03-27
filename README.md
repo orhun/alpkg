@@ -2,7 +2,7 @@
 
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/orhun/alpkg/ci.yml?logo=GitHub)](https://github.com/orhun/alpkg/actions)
 
-**Set up Alpine Linux packaging environment with a breeze!**
+**Set up Alpine Linux packaging environment with a breeze!** See [**this blog post**](https://blog.orhun.dev/alpine-packaging-setup).
 
 ![alpkg demo](assets/demo.gif)
 
