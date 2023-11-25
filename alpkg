@@ -48,7 +48,7 @@ create-pkg-script() {
 		pkg=""
 		lint_pkg=false
 		edit_pkg=true
-		layout_file="$PACKAGE_DIR/pkg-edit-layout.yml"
+		layout_file="$PACKAGE_DIR/pkg-edit-layout.kdl"
 		while getopts ":lhe" opt; do
 		  case ${opt} in
 		  e)
@@ -83,20 +83,16 @@ create-pkg-script() {
 }
 
 create-zellij-layout() {
-  cat <<-'_EOF_' >"$CHROOT_DIR/$PACKAGE_DIR/pkg-edit-layout.yml"
-		# https://zellij.dev/old-documentation/layouts.html
-		tabs:
-		  - direction: Vertical
-		    parts:
-		      - direction: Vertical
-		        focus: true
-		        split_size:
-		          Percent: 50
-		        run:
-		          command: { cmd: vim, args: ["APKBUILD"] }
-		      - direction: Vertical
-		        split_size:
-		          Percent: 50
+  cat <<-'_EOF_' >"$CHROOT_DIR/$PACKAGE_DIR/pkg-edit-layout.kdl"
+    // https://zellij.dev/documentation/layouts
+    layout {
+        pane split_direction="vertical" {
+            pane focus=true command="vim" {
+		          args "APKBUILD"
+	          }
+            pane
+        }
+    }
 	_EOF_
 }
 
