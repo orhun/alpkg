@@ -45,6 +45,7 @@ create-pkg-script() {
   cat <<-'_EOF_' >"$CHROOT_DIR/$PACKAGE_DIR/pkg.sh"
 		#!/usr/bin/env bash
 		set -e
+    export SHELL=bash
 		pkg=""
 		lint_pkg=false
 		edit_pkg=true
